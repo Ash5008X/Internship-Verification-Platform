@@ -127,11 +127,40 @@ const getDecision = (score, triggeredRules, requiresManualReview) => {
         return "rejected";
     }
 
+    if (score >= 45) {
+        return "rejected";
+    }
+
     if (score >= 20 || requiresManualReview) {
         return "needs_review";
     }
 
     return "approved";
+};
+const hasApplicationFeeRequest = (text) => {
+    const patterns = [
+        /\bapplication fee\b/i,
+        /\bregistration fee\b/i,
+        /\bprocessing fee\b/i,
+        /\bpay\s+(?:a|the)\s+fee\b/i,
+        /\bfee\s+(?:is|required|must be paid)\b/i,
+    ];
+
+    return patterns.some((pattern) => pattern.test(text || ""));
+};
+
+const hasUpfrontPaymentRequest = (text) => {
+    const patterns = [
+        /\bupfront payment\b/i,
+        /\badvance payment\b/i,
+        /\bsecurity deposit\b/i,
+        /\btraining fee\b/i,
+        /\bpay\s+(?:an?\s+)?(?:advance|deposit)\b/i,
+        /\bpayment required before (?:joining|starting|selection|application)\b/i,
+        /\bpay\s+before\s+(?:joining|starting|selection|application)\b/i,
+    ];
+
+    return patterns.some((pattern) => pattern.test(text || ""));
 };
 export function calculateRisk({
     internship,
@@ -161,25 +190,32 @@ export function calculateRisk({
     const contactEmail = company.contactEmail;
 
     // 1. Application fee detection
-    const feeDetected =
-        signals.applicationFeeRequired === true ||
-        hasPaymentRequest(description);
+        const feeDetected =
+            hasApplicationFeeRequest(description) ||
+            signals.applicationFeeRequired === true;
 
-    if (feeDetected) {
-        triggerRule(
-            RISK_RULES.APPLICATION_FEE,
-            "Application or registration fee detected."
-        );
-    }
+        if (feeDetected) {
+            triggerRule(
+                RISK_RULES.APPLICATION_FEE,
+                "Application or registration fee detected."
+            );
+        }
 
-    // 2. Upfront payment detection
-    if (signals.upfrontPaymentRequired === true) {
-        triggerRule(
-            RISK_RULES.UPFRONT_PAYMENT,
-            "Upfront payment requirement reported."
-        );
-    }
+        // 2. Upfront payment detection
+        const upfrontPaymentDetected =
+            hasUpfrontPaymentRequest(description) ||
+            (
+                signals.upfrontPaymentRequired === true &&
+                typeof signals.upfrontPaymentEvidence === "string" &&
+                signals.upfrontPaymentEvidence.trim().length > 0
+            );
 
+        if (upfrontPaymentDetected) {
+            triggerRule(
+                RISK_RULES.UPFRONT_PAYMENT,
+                "An upfront payment requirement was explicitly identified."
+            );
+        }
     // 3. Personal recruiter email
     if (contactEmail && isPersonalEmail(contactEmail)) {
         triggerRule(
@@ -297,7 +333,7 @@ export function calculateRisk({
     decision,
     triggeredRules,
     reasons,
-    status: signals.requiresManualReview
+    status: decision === "needs_review"
         ? "needs_review"
         : "completed",
     ruleSetVersion: RULE_SET_VERSION,

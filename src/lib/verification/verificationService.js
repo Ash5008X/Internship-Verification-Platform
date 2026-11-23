@@ -49,21 +49,22 @@ export async function assessInternship(
 
     // 6. Determine whether manual review is required
     const requiresManualReview =
-        companyChecks.some(
-            (check) =>
-                check.status === "inconclusive" ||
-                check.status === "failed"
-        ) ||
+        companyChecks.some((check) => check.status === "failed") ||
         signals.requiresManualReview === true;
+
+    const description = internship.description || "";
+    const derivedSignals = {
+        applicationFeeRequired: /\b(application|registration|processing|training) fee\b/i.test(description),
+        upfrontPaymentRequired: /\b(upfront payment|security deposit|pay to apply)\b/i.test(description),
+        ...signals,
+        requiresManualReview,
+    };
 
     // 7. Calculate overall risk
     const riskResult = calculateRisk({
         internship,
         company,
-        signals: {
-            ...signals,
-            requiresManualReview,
-        },
+        signals: derivedSignals,
     });
 
     // 8. Start MongoDB transaction
@@ -121,13 +122,31 @@ export async function assessInternship(
                     internshipId: internship._id,
                     _id: { $ne: riskAssessment._id },
                     status: {
-                        $in: ["completed", "needs_review"],
+                        $in: ["pending", "completed", "needs_review"],
                     },
                 },
                 {
                     $set: {
                         status: "superseded",
                     },
+                },
+                { session }
+            );
+
+            const nextInternshipStatus =
+                riskResult.decision === "approved"
+                    ? "active"
+                    : riskResult.decision === "rejected"
+                        ? "rejected"
+                        : "pending";
+
+            await Internship.updateOne(
+                {
+                    _id: internship._id,
+                    status: "pending",
+                },
+                {
+                    $set: { status: nextInternshipStatus },
                 },
                 { session }
             );

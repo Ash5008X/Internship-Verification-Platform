@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 
 import { connectDB } from "@/config/db";
@@ -7,6 +6,8 @@ import { getRecruiterCompany } from "@/lib/auth/getRecruiterCompany";
 
 import Internship from "@/models/Internship";
 import Application from "@/models/Application";
+import RiskAssessment from "@/models/RiskAssessment";
+import VerificationRecord from "@/models/VerificationRecord";
 
 const ALLOWED_STATUSES = [
     "draft",
@@ -21,7 +22,7 @@ function escapeRegex(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function serializeInternship(internship, applicantCounts) {
+function serializeInternship(internship, applicantCounts, assessmentData) {
     const locationParts = [
         internship.location?.city,
         internship.location?.state,
@@ -38,7 +39,6 @@ function serializeInternship(internship, applicantCounts) {
         title: internship.title,
         description: internship.description,
         category: internship.category,
-
         requiredSkills: internship.requiredSkills || [],
         preferredSkills: internship.preferredSkills || [],
 
@@ -50,7 +50,6 @@ function serializeInternship(internship, applicantCounts) {
 
         duration: internship.duration || {},
         workMode: internship.workMode || "unspecified",
-
         location: internship.location || {},
 
         locationLabel:
@@ -59,14 +58,14 @@ function serializeInternship(internship, applicantCounts) {
                 : internship.workMode || "Not specified",
 
         eligibility: internship.eligibility || {},
-
         applicationMethod: internship.applicationMethod,
         applicationUrl: internship.applicationUrl || null,
         applicationDeadline: internship.applicationDeadline || null,
-
         status: internship.status,
-
         applicantCount,
+
+        riskAssessment: assessmentData?.assessment || null,
+        verificationChecks: assessmentData?.verificationChecks || [],
 
         createdAt: internship.createdAt,
         updatedAt: internship.updatedAt,
@@ -145,10 +144,7 @@ export async function GET(request) {
         }
 
         if (search) {
-            const expression = new RegExp(
-                escapeRegex(search),
-                "i"
-            );
+            const expression = new RegExp(escapeRegex(search), "i");
 
             filters.$or = [
                 { title: expression },
@@ -159,7 +155,6 @@ export async function GET(request) {
             ];
         }
 
-        // Retrieve all of this recruiter's internships for statistics.
         const ownershipFilter = {
             companyId: company._id,
             createdBy: user._id,
@@ -172,9 +167,7 @@ export async function GET(request) {
             groupedStats,
         ] = await Promise.all([
             Internship.find(filters)
-                .sort({
-                    createdAt: -1,
-                })
+                .sort({ createdAt: -1 })
                 .skip((page - 1) * limit)
                 .limit(limit)
                 .lean(),
@@ -186,15 +179,11 @@ export async function GET(request) {
                 .lean(),
 
             Internship.aggregate([
-                {
-                    $match: ownershipFilter,
-                },
+                { $match: ownershipFilter },
                 {
                     $group: {
                         _id: "$status",
-                        count: {
-                            $sum: 1,
-                        },
+                        count: { $sum: 1 },
                     },
                 },
             ]),
@@ -204,14 +193,19 @@ export async function GET(request) {
             (internship) => internship._id
         );
 
-        // Count actual submitted applications.
-        // Saved applications are not counted as applicants.
+        const assessments = internshipIds.length
+            ? await RiskAssessment.find({
+                  internshipId: { $in: internshipIds },
+                  status: { $in: ["completed", "needs_review"] },
+              })
+                  .sort({ assessedAt: -1 })
+                  .lean()
+            : [];
+
         const applicationCounts = await Application.aggregate([
             {
                 $match: {
-                    internshipId: {
-                        $in: internshipIds,
-                    },
+                    internshipId: { $in: internshipIds },
                     status: {
                         $in: [
                             "applied",
@@ -225,9 +219,7 @@ export async function GET(request) {
             {
                 $group: {
                     _id: "$internshipId",
-                    count: {
-                        $sum: 1,
-                    },
+                    count: { $sum: 1 },
                 },
             },
         ]);
@@ -238,6 +230,77 @@ export async function GET(request) {
                 item.count,
             ])
         );
+
+        const latestAssessments = new Map();
+
+        for (const assessment of assessments) {
+            const internshipKey = assessment.internshipId.toString();
+
+            if (!latestAssessments.has(internshipKey)) {
+                latestAssessments.set(internshipKey, assessment);
+            }
+        }
+
+        const verificationIds = assessments.flatMap((assessment) =>
+            (assessment.evidenceRefs || [])
+                .filter(
+                    (reference) =>
+                        reference.sourceType === "verification"
+                )
+                .map((reference) => reference.sourceId)
+        );
+
+        const verificationRecords = verificationIds.length
+            ? await VerificationRecord.find({
+                  _id: { $in: verificationIds },
+              }).lean()
+            : [];
+
+        const verificationById = new Map(
+            verificationRecords.map((record) => [
+                record._id.toString(),
+                record,
+            ])
+        );
+
+        const assessmentDataByInternship = new Map();
+
+        for (const [internshipId, assessment] of latestAssessments) {
+            const checks = (assessment.evidenceRefs || [])
+                .filter(
+                    (reference) =>
+                        reference.sourceType === "verification"
+                )
+                .map((reference) =>
+                    verificationById.get(reference.sourceId.toString())
+                )
+                .filter(Boolean)
+                .map((record) => ({
+                    id: record._id,
+                    checkType: record.checkType,
+                    status: record.status,
+                    method: record.method,
+                    notes: record.notes || "",
+                    evidence: record.evidence || null,
+                    checkedAt: record.checkedAt,
+                }));
+
+            assessmentDataByInternship.set(internshipId, {
+                assessment: {
+                    id: assessment._id,
+                    score: assessment.score,
+                    severity: assessment.severity,
+                    decision: assessment.decision,
+                    status: assessment.status,
+                    reasons: assessment.reasons || [],
+                    triggeredRules: assessment.triggeredRules || [],
+                    ruleSetVersion: assessment.ruleSetVersion,
+                    confidence: assessment.confidence ?? null,
+                    assessedAt: assessment.assessedAt,
+                },
+                verificationChecks: checks,
+            });
+        }
 
         const stats = {
             total: 0,
@@ -260,16 +323,19 @@ export async function GET(request) {
         }
 
         const data = internships.map((internship) =>
-            serializeInternship(internship, applicantCounts)
+            serializeInternship(
+                internship,
+                applicantCounts,
+                assessmentDataByInternship.get(
+                    internship._id.toString()
+                )
+            )
         );
 
         return NextResponse.json({
             success: true,
-
             data,
-
             stats,
-
             pagination: {
                 page,
                 limit,
@@ -280,10 +346,7 @@ export async function GET(request) {
             },
         });
     } catch (error) {
-        console.error(
-            "GET recruiter internships error:",
-            error
-        );
+        console.error("GET recruiter internships error:", error);
 
         return NextResponse.json(
             {

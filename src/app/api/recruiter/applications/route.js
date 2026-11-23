@@ -8,6 +8,7 @@ import { getRecruiterCompany } from "@/lib/auth/getRecruiterCompany";
 import Application from "@/models/Application";
 import Internship from "@/models/Internship";
 import User from "@/models/User";
+import "@/models/CV";
 
 const ALLOWED_STATUSES = [
     "applied",

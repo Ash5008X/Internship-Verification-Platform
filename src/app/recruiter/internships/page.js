@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import RecruiterSectionHeader from "@/components/shared/recruiter/RecruiterSectionHeader";
+import InternshipDetailsModal from "@/components/shared/recruiter/InternshipDetailsModal";
 
 const INITIAL_FORM = {
     title: "",
@@ -47,7 +47,6 @@ const STATUS_STYLES = {
 
 function formatStatus(status) {
     if (!status) return "Unknown";
-
     return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
@@ -55,7 +54,6 @@ function formatDate(value) {
     if (!value) return "Not specified";
 
     const date = new Date(value);
-
     if (Number.isNaN(date.getTime())) return "Not specified";
 
     return date.toLocaleDateString("en-IN", {
@@ -327,6 +325,7 @@ export default function RecruiterInternshipsPage() {
 
     const [selectedInternship, setSelectedInternship] = useState(null);
     const [editingInternship, setEditingInternship] = useState(null);
+    const [detailsInternship, setDetailsInternship] = useState(null);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -987,7 +986,8 @@ export default function RecruiterInternshipsPage() {
                                             {filteredInternships.map((internship) => (
                                                 <tr
                                                     key={internship._id}
-                                                    className="transition-colors hover:bg-surface-alt/60"
+                                                    onClick={() => setDetailsInternship(internship)}
+                                                    className="cursor-pointer transition-colors hover:bg-surface-alt/60"
                                                 >
                                                     <td className="px-5 py-4">
                                                         <p className="font-ui text-sm font-bold text-text">
@@ -1030,7 +1030,10 @@ export default function RecruiterInternshipsPage() {
                                                             {["draft", "active"].includes(internship.status) && (
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => openEditModal(internship)}
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        openEditModal(internship);
+                                                                    }}
                                                                     className="rounded-md border border-border px-3 py-1.5 font-ui text-xs font-semibold text-text-secondary transition hover:bg-surface-alt"
                                                                 >
                                                                     Edit
@@ -1041,7 +1044,10 @@ export default function RecruiterInternshipsPage() {
                                                                 <button
                                                                     type="button"
                                                                     disabled={actionLoading}
-                                                                    onClick={() => submitDraft(internship)}
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        submitDraft(internship);
+                                                                    }}
                                                                     className="rounded-md bg-primary px-3 py-1.5 font-ui text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                                                                 >
                                                                     Submit
@@ -1051,7 +1057,8 @@ export default function RecruiterInternshipsPage() {
                                                             {["active", "pending"].includes(internship.status) && (
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => {
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
                                                                         setSelectedInternship(internship);
                                                                         setShowWithdrawConfirm(true);
                                                                     }}
@@ -1074,7 +1081,8 @@ export default function RecruiterInternshipsPage() {
                                 {filteredInternships.map((internship) => (
                                     <div
                                         key={internship._id}
-                                        className="space-y-4 rounded-[var(--radius-lg)] border border-border bg-surface p-4"
+                                        onClick={() => setDetailsInternship(internship)}
+                                        className="cursor-pointer space-y-4 rounded-[var(--radius-lg)] border border-border bg-surface p-4 transition-colors hover:border-primary/40 hover:bg-surface-alt/40"
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
@@ -1136,7 +1144,10 @@ export default function RecruiterInternshipsPage() {
                                             {["draft", "active"].includes(internship.status) && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => openEditModal(internship)}
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        openEditModal(internship);
+                                                    }}
                                                     className="rounded-md border border-border px-3 py-2 font-ui text-xs font-semibold text-text-secondary hover:bg-surface-alt"
                                                 >
                                                     Edit
@@ -1147,7 +1158,10 @@ export default function RecruiterInternshipsPage() {
                                                 <button
                                                     type="button"
                                                     disabled={actionLoading}
-                                                    onClick={() => submitDraft(internship)}
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        submitDraft(internship);
+                                                    }}
                                                     className="rounded-md bg-primary px-3 py-2 font-ui text-xs font-semibold text-white disabled:opacity-50"
                                                 >
                                                     Submit
@@ -1157,7 +1171,8 @@ export default function RecruiterInternshipsPage() {
                                             {["active", "pending"].includes(internship.status) && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => {
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
                                                         setSelectedInternship(internship);
                                                         setShowWithdrawConfirm(true);
                                                     }}
@@ -1180,6 +1195,11 @@ export default function RecruiterInternshipsPage() {
                     )}
                 </section>
             </div>
+
+            <InternshipDetailsModal
+                internship={detailsInternship}
+                onClose={() => setDetailsInternship(null)}
+            />
 
             {/* Withdraw confirmation */}
             {showWithdrawConfirm && selectedInternship && (

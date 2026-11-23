@@ -6,6 +6,7 @@ import { connectDB } from "@/config/db";
 import Internship from "@/models/Internship";
 import { requireRecruiter } from "@/lib/auth/requireRecruiter";
 import { getRecruiterCompany } from "@/lib/auth/getRecruiterCompany";
+import { assessInternship } from "@/lib/verification/verificationService";
 
 export async function POST(request, { params }) {
     try {
@@ -104,11 +105,27 @@ export async function POST(request, { params }) {
         internship.status = "pending";
         await internship.save();
 
+        const assessmentResult = await assessInternship(internshipId, {
+            assessedBy: user._id,
+        });
+
+        const updatedInternship = await Internship.findById(internshipId);
+
+        const decisionMessage =
+            assessmentResult.assessment.decision === "approved"
+                ? "Internship verified and published successfully."
+                : assessmentResult.assessment.decision === "rejected"
+                    ? "Internship was rejected by automated risk assessment."
+                    : "Internship assessment completed. The listing remains pending review.";
+
         return NextResponse.json(
             {
                 success: true,
-                message: "Internship submitted for automated assessment.",
-                data: internship,
+                message: decisionMessage,
+                data: {
+                    internship: updatedInternship,
+                    assessment: assessmentResult.assessment,
+                },
             },
             { status: 200 }
         );
