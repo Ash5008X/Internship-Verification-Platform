@@ -58,8 +58,10 @@ next-env.d.ts
 /public/uploads/*
 !/public/uploads/.gitkeep
 
-# Local internship seed files
-data/test-accounts.json
-data/internship-data.json
-scripts/seed-internships.js
-scripts/seed.js
+# InternCheck test data
+/data/test-accounts.json
+/data/internship-data.json
+
+# Local seed scripts
+/scripts/seed.js
+/scripts/seed-internships.js
