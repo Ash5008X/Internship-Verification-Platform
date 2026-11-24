@@ -2,6 +2,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import ProfileSection from "@/components/shared/ProfileSection";
+import FormField from "@/components/shared/FormField";
 
 const EMPTY_PROFILE = {
   name: "",
@@ -14,43 +16,6 @@ const EMPTY_PROFILE = {
   skills: [],
   linkedinUrl: "",
 };
-
-function ProfileSection({ title, description, children }) {
-  return (
-    <section className="bg-surface border border-border rounded-[var(--radius-lg)] overflow-hidden">
-      <div className="px-5 sm:px-6 py-5 border-b border-border">
-        <h2 className="font-display text-lg font-bold text-text">{title}</h2>
-        <p className="font-ui text-xs text-text-muted mt-1">{description}</p>
-      </div>
-      <div className="p-5 sm:p-6">{children}</div>
-    </section>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  type = "text",
-  placeholder,
-  disabled = false,
-}) {
-  return (
-    <label className="block space-y-2">
-      <span className="font-ui text-xs font-semibold text-text-secondary">
-        {label}
-      </span>
-      <input
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        disabled={disabled}
-        className="w-full px-4 py-3 rounded-xl bg-background border border-border text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-      />
-    </label>
-  );
-}
 
 function Avatar({ name, avatarUrl }) {
   const initials = (name || "Student")
@@ -487,22 +452,22 @@ export default function StudentProfilePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <Field label="Full Name" {...inputProps("name")} />
-            <Field
+            <FormField variant="student" label="Full Name" {...inputProps("name")} />
+            <FormField variant="student"
               label="Email Address"
               type="email"
               value={profile.email}
               disabled
             />
-            <Field label="Institution" {...inputProps("college")} />
-            <Field label="Degree / Course" {...inputProps("degree")} />
-            <Field
+            <FormField variant="student" label="Institution" {...inputProps("college")} />
+            <FormField variant="student" label="Degree / Course" {...inputProps("degree")} />
+            <FormField variant="student"
               label="Expected Graduation Year"
               type="number"
               placeholder="e.g. 2027"
               {...inputProps("graduationYear")}
             />
-            <Field
+            <FormField variant="student"
               label="LinkedIn Profile"
               type="url"
               placeholder="https://www.linkedin.com/in/your-profile"

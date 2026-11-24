@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:api": "newman run postman/InternCheck-API.postman_collection.json -e postman/InternCheck-Local.postman_environment.json"
+    "test:api": "newman run postman/InternCheck-API.postman_collection.json -e postman/InternCheck-Local.postman_environment.json",
+    "seed": "node scripts/seed.js"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.5",

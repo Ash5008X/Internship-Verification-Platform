@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Avatar from "../../ui/Avatar";
+import {useState,useEffect} from "react";
 
 export default function RecruiterSidebar({
   recruiter,
@@ -12,6 +13,38 @@ export default function RecruiterSidebar({
 }) {
   const pathname = usePathname();
 
+  const [profileDetails, setProfileDetails] = useState({
+    companyName: recruiter?.companyName || recruiter?.company?.name || "",
+    jobTitle:
+      recruiter?.jobTitle ||
+      recruiter?.recruiterProfile?.jobTitle ||
+      "",
+  });
+
+  useEffect(() => {
+    async function fetchRecruiterProfile() {
+      try {
+        const response = await fetch("/api/recruiter/profile", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          setProfileDetails({
+            companyName: result.data.company?.name || "",
+            jobTitle: result.data.recruiter?.jobTitle || "",
+          });
+        }
+      } catch (error) {
+        console.error("Unable to fetch sidebar profile:", error);
+      }
+    }
+
+    fetchRecruiterProfile();
+  }, []);
+
   const recruiterName =
     [recruiter?.firstName, recruiter?.lastName].filter(Boolean).join(" ") ||
     recruiter?.fullName ||
@@ -19,9 +52,16 @@ export default function RecruiterSidebar({
     "Recruiter";
 
   const companyName =
-    recruiter?.companyName ||
-    recruiter?.company?.name ||
-    "Your Company";
+  profileDetails.companyName ||
+  recruiter?.companyName ||
+  recruiter?.company?.name ||
+  "Your Company";
+
+const jobTitle =
+  profileDetails.jobTitle ||
+  recruiter?.jobTitle ||
+  recruiter?.recruiterProfile?.jobTitle ||
+  "Recruiter";
 
   const navItems = [
     {
@@ -159,24 +199,20 @@ export default function RecruiterSidebar({
               variant="brand"
             />
 
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="font-ui font-bold text-xs text-text truncate">
                 {recruiterName}
               </p>
-
-              <div className="flex items-center gap-1 text-[11px] text-success mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                <span className="font-ui font-medium">
-                  Recruiter Account
-                </span>
-              </div>
             </div>
           </div>
 
-          <div className="mt-2.5 pt-2 border-t border-border/80 flex items-center justify-between gap-2 text-[11px] text-text-muted">
-            <span className="font-ui truncate">{companyName}</span>
-            <span className="font-mono text-[10px] shrink-0">
-              Recruiter
+          <div className="mt-2.5 pt-2 border-t border-border/80 flex items-center justify-between gap-2 text-[11px]">
+            <span className="font-ui font-medium text-text truncate">
+              {companyName}
+            </span>
+
+            <span className="font-ui text-text-muted shrink-0 truncate max-w-[45%]">
+              {jobTitle}
             </span>
           </div>
         </div>

@@ -2,6 +2,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import ProfileSection from "@/components/shared/ProfileSection";
+import FormField from "@/components/shared/FormField";
 
 const EMPTY_PROFILE = {
     recruiter: {
@@ -36,54 +38,6 @@ const INDUSTRIES = [
     "E-commerce",
     "Other",
 ];
-
-function ProfileSection({ title, description, children }) {
-    return (
-        <section className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-surface">
-            <div className="border-b border-border px-5 py-5 sm:px-6">
-                <h2 className="font-display text-lg font-bold text-text">
-                    {title}
-                </h2>
-                <p className="mt-1 font-ui text-xs text-text-muted">
-                    {description}
-                </p>
-            </div>
-
-            <div className="p-5 sm:p-6">
-                {children}
-            </div>
-        </section>
-    );
-}
-
-function Field({
-    label,
-    value,
-    onChange,
-    placeholder,
-    type = "text",
-    disabled = false,
-    required = false,
-}) {
-    return (
-        <label className="block space-y-2">
-            <span className="font-ui text-xs font-semibold text-text-secondary">
-                {label}
-                {required && <span className="ml-1 text-primary">*</span>}
-            </span>
-
-            <input
-                type={type}
-                value={value ?? ""}
-                onChange={onChange}
-                placeholder={placeholder}
-                disabled={disabled}
-                required={required}
-                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-text transition-all placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-70"
-            />
-        </label>
-    );
-}
 
 function Avatar({ name, imageUrl }) {
     const initials = (name || "Recruiter")
@@ -171,6 +125,12 @@ export default function RecruiterProfilePage() {
                 company: {
                     ...EMPTY_PROFILE.company,
                     ...result.data.company,
+                    identityStatus:
+                        result.data.recruiter?.status === "pending"
+                            ? "pending"
+                            : result.data.recruiter?.status === "active"
+                                ? "verified"
+                                : "unverified",
                     headquarters: {
                         ...EMPTY_PROFILE.company.headquarters,
                         ...result.data.company?.headquarters,
@@ -267,6 +227,12 @@ export default function RecruiterProfilePage() {
                 company: {
                     ...EMPTY_PROFILE.company,
                     ...result.data.company,
+                    identityStatus:
+                        result.data.recruiter?.status === "pending"
+                            ? "pending"
+                            : result.data.recruiter?.status === "active"
+                                ? "verified"
+                                : "unverified",
                     headquarters: {
                         ...EMPTY_PROFILE.company.headquarters,
                         ...result.data.company?.headquarters,
@@ -447,7 +413,7 @@ export default function RecruiterProfilePage() {
                         </div>
 
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                            <Field
+                            <FormField
                                 label="Full Name"
                                 value={profile.recruiter.name}
                                 onChange={(event) => updateRecruiter("name", event.target.value)}
@@ -455,14 +421,14 @@ export default function RecruiterProfilePage() {
                                 required
                             />
 
-                            <Field
+                            <FormField
                                 label="Email Address"
                                 value={profile.recruiter.email}
                                 type="email"
                                 disabled
                             />
 
-                            <Field
+                            <FormField
                                 label="Job Title"
                                 value={profile.recruiter.jobTitle}
                                 onChange={(event) => updateRecruiter("jobTitle", event.target.value)}
@@ -481,7 +447,7 @@ export default function RecruiterProfilePage() {
                         description="Information displayed to students viewing your internship listings."
                     >
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                            <Field
+                            <FormField
                                 label="Company Name"
                                 value={profile.company.name}
                                 onChange={(event) => updateCompany("name", event.target.value)}
@@ -489,7 +455,7 @@ export default function RecruiterProfilePage() {
                                 required
                             />
 
-                            <Field
+                            <FormField
                                 label="Company Website"
                                 type="url"
                                 value={profile.company.website}
@@ -517,7 +483,7 @@ export default function RecruiterProfilePage() {
                                 </select>
                             </label>
 
-                            <Field
+                            <FormField
                                 label="Careers Contact Email"
                                 type="email"
                                 value={profile.company.contactEmail}
@@ -553,7 +519,7 @@ export default function RecruiterProfilePage() {
                         description="The registered or primary location of your organization."
                     >
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                            <Field
+                            <FormField
                                 label="City"
                                 value={profile.company.headquarters.city}
                                 onChange={(event) => updateHeadquarters("city", event.target.value)}
@@ -561,7 +527,7 @@ export default function RecruiterProfilePage() {
                                 placeholder="e.g. New Delhi"
                             />
 
-                            <Field
+                            <FormField
                                 label="State"
                                 value={profile.company.headquarters.state}
                                 onChange={(event) => updateHeadquarters("state", event.target.value)}
@@ -569,7 +535,7 @@ export default function RecruiterProfilePage() {
                                 placeholder="e.g. Delhi"
                             />
 
-                            <Field
+                            <FormField
                                 label="Country"
                                 value={profile.company.headquarters.country}
                                 onChange={(event) => updateHeadquarters("country", event.target.value)}

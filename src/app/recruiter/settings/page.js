@@ -2,67 +2,8 @@
 "use client";
 
 import { useState } from "react";
-
-// --------------------------------------------------
-// Reusable components
-// --------------------------------------------------
-
-function SettingsSection({ title, description, children }) {
-  return (
-    <section className="bg-surface border border-border rounded-[var(--radius-lg)] overflow-hidden">
-      <div className="px-5 sm:px-6 py-5 border-b border-border">
-        <h2 className="font-display text-lg font-bold text-text">
-          {title}
-        </h2>
-
-        <p className="font-ui text-xs text-text-muted mt-1">
-          {description}
-        </p>
-      </div>
-
-      <div className="p-5 sm:p-6 space-y-5">
-        {children}
-      </div>
-    </section>
-  );
-}
-
-function Toggle({ label, description, checked, onChange }) {
-  return (
-    <div className="flex items-center justify-between gap-5">
-      <div className="min-w-0">
-        <p className="font-ui text-sm font-semibold text-text">
-          {label}
-        </p>
-
-        <p className="font-ui text-xs text-text-muted mt-1 leading-5">
-          {description}
-        </p>
-      </div>
-
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={() => onChange(!checked)}
-        className={`relative flex-none w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 ${
-          checked ? "bg-primary" : "bg-[#D8CDD2]"
-        }`}
-      >
-        <span
-          className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-            checked ? "translate-x-5" : "translate-x-0"
-          }`}
-        />
-      </button>
-    </div>
-  );
-}
-
-// --------------------------------------------------
-// Main page
-// --------------------------------------------------
+import SettingsSection from "@/components/shared/SettingsSection";
+import Toggle from "@/components/ui/Toggle";
 
 export default function RecruiterSettingsPage() {
   const [settings, setSettings] = useState({

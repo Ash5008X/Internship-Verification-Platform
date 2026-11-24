@@ -16,24 +16,3 @@ export async function POST() {
 
     return response;
 }
-
-
-/* 
- * Handle the logout process.
-
-async function handleLogout() {
-    try {
-        const response = await fetch("/api/auth/logout", {
-            method: "POST",
-        });
-
-        if (!response.ok) {
-            throw new Error("Logout failed.");
-        }
-
-        window.location.href = "/login";
-    } catch (error) {
-        console.error(error);
-    }
-}
-*/
