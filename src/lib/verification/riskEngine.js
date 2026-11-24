@@ -1,9 +1,8 @@
-
 import {
     RISK_RULES,
     RISK_THRESHOLDS,
     RULE_SET_VERSION,
-} from "./rules";
+} from "./rules.js";
 
 const normalizeDomain = (value) => {
     if (!value) return null;
