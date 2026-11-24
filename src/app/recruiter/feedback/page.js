@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -171,7 +172,7 @@ function EmptyState({ searchQuery, activeFilter }) {
             <p className="font-ui text-xs text-text-muted mt-1">
                 {searchQuery || activeFilter
                     ? "Try changing your search or selected filter."
-                    : "Approved student experiences will appear here."}
+                    : "Student experiences will appear here."}
             </p>
         </div>
     );
@@ -220,15 +221,14 @@ function FeedbackCard({ item, onRead }) {
             </div>
 
             <p className="font-ui text-xs text-text-secondary leading-6 line-clamp-3">
-                {item.feedback ||
-                    item.workExperience ||
-                    item.applicationExperience ||
-                    item.interviewExperience ||
-                    item.outcome ||
-                    "No written feedback was provided."}
+                {item.experience || "No written feedback was provided."}
             </p>
 
-            <div className="pt-3 border-t border-border flex justify-end">
+            <div className="pt-3 border-t border-border flex items-center justify-between gap-3">
+                <span className="font-ui text-[11px] text-text-muted">
+                    {item.recruiterReply ? "Replied" : "Awaiting response"}
+                </span>
+
                 <button
                     type="button"
                     onClick={() => onRead(item)}
@@ -241,31 +241,89 @@ function FeedbackCard({ item, onRead }) {
     );
 }
 
-function FeedbackDetailsModal({ item, onClose }) {
-    if (!item) return null;
+function FeedbackDetailsModal({ item, onClose, onReplySaved }) {
+    const [reply, setReply] = useState("");
+    const [isReplying, setIsReplying] = useState(false);
+    const [savingReply, setSavingReply] = useState(false);
+    const [replyError, setReplyError] = useState("");
+    const [replySuccess, setReplySuccess] = useState("");
 
-    const sections = [
-        {
-            title: "Application Experience",
-            content: item.applicationExperience,
-        },
-        {
-            title: "Interview Experience",
-            content: item.interviewExperience,
-        },
-        {
-            title: "Work Experience",
-            content: item.workExperience,
-        },
-        {
-            title: "Outcome",
-            content: item.outcome,
-        },
-        {
-            title: "Additional Feedback",
-            content: item.feedback,
-        },
-    ].filter((section) => section.content?.trim());
+    useEffect(() => {
+        setReply(item?.recruiterReply || "");
+        setIsReplying(false);
+        setSavingReply(false);
+        setReplyError("");
+        setReplySuccess("");
+    }, [item]);
+
+    const sections = useMemo(() => {
+        if (!item) return [];
+
+        return [
+            {
+                title: "Student Experience",
+                content: item.experience,
+            },
+            {
+                title: "Field of Improvements",
+                content: item.improvements,
+            },
+        ].filter((section) => section.content?.trim());
+    }, [item]);
+
+    async function handleReplySubmit() {
+        const trimmedReply = reply.trim();
+
+        if (!trimmedReply) {
+            setReplyError("Please enter a reply.");
+            return;
+        }
+
+        if (trimmedReply.length > 3000) {
+            setReplyError("Reply cannot exceed 3000 characters.");
+            return;
+        }
+
+        setSavingReply(true);
+        setReplyError("");
+        setReplySuccess("");
+
+        try {
+            const response = await fetch(
+                `/api/recruiter/feedback/${item._id}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        reply: trimmedReply,
+                    }),
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(
+                    result.message || "Unable to submit reply."
+                );
+            }
+
+            onReplySaved(item._id, result.data.recruiterReply);
+
+            setReply(result.data.recruiterReply);
+            setIsReplying(false);
+            setReplySuccess("Your response has been sent to the student.");
+        } catch (error) {
+            setReplyError(error.message);
+        } finally {
+            setSavingReply(false);
+        }
+    }
+
+    if (!item) return null;
 
     return (
         <div
@@ -278,8 +336,8 @@ function FeedbackDetailsModal({ item, onClose }) {
         >
             <div className="absolute inset-0 bg-[#21131d]/55 backdrop-blur-md" />
 
-            <div className="relative w-full max-w-3xl max-h-[92vh] overflow-hidden rounded-2xl sm:rounded-3xl border border-white/60 dark:border-white/15 bg-white/95 dark:bg-[#211923]/95 backdrop-blur-2xl shadow-[0_30px_100px_rgba(30,10,25,0.35)]">
-                <div className="flex items-start justify-between gap-4 px-5 sm:px-7 py-5 border-b border-border">
+            <div className="relative flex flex-col w-full max-w-3xl h-[92vh] max-h-[92vh] overflow-hidden rounded-2xl sm:rounded-3xl border border-white/60 dark:border-white/15 bg-white/95 dark:bg-[#211923]/95 backdrop-blur-2xl shadow-[0_30px_100px_rgba(30,10,25,0.35)]">
+                <div className="flex shrink-0 items-start justify-between gap-4 px-5 sm:px-7 py-5 border-b border-border">
                     <div>
                         <span className="font-ui text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
                             Student Experience
@@ -304,7 +362,7 @@ function FeedbackDetailsModal({ item, onClose }) {
                     </button>
                 </div>
 
-                <div className="overflow-y-auto max-h-[calc(92vh-145px)] px-5 sm:px-7 py-6 space-y-6">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 sm:px-7 py-6 space-y-6">
                     <div className="flex items-center gap-3">
                         <Avatar name={item.student?.name} />
 
@@ -354,7 +412,10 @@ function FeedbackDetailsModal({ item, onClose }) {
 
                     {sections.length > 0 ? (
                         sections.map((section) => (
-                            <section key={section.title} className="space-y-2">
+                            <section
+                                key={section.title}
+                                className="space-y-2"
+                            >
                                 <h3 className="font-ui text-sm font-bold text-text">
                                     {section.title}
                                 </h3>
@@ -371,9 +432,100 @@ function FeedbackDetailsModal({ item, onClose }) {
                             No written feedback was provided.
                         </p>
                     )}
+
+                    <section className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <h3 className="font-ui text-sm font-bold text-text">
+                                Recruiter Response
+                            </h3>
+
+                            {!isReplying && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsReplying(true);
+                                        setReplyError("");
+                                        setReplySuccess("");
+                                    }}
+                                    className="px-3 py-2 rounded-lg bg-primary text-white font-ui text-xs font-bold hover:opacity-90 transition-opacity"
+                                >
+                                    {item.recruiterReply ? "Edit Reply" : "Reply to Student"}
+                                </button>
+                            )}
+                        </div>
+
+                        {item.recruiterReply && !isReplying && (
+                            <div className="rounded-xl border border-primary/20 bg-rose-soft/40 p-4">
+                                <p className="font-ui text-xs text-text-secondary leading-6 whitespace-pre-wrap">
+                                    {item.recruiterReply}
+                                </p>
+                            </div>
+                        )}
+
+                        {isReplying && (
+                            <div className="space-y-3">
+                                <textarea
+                                    value={reply}
+                                    onChange={(event) => setReply(event.target.value)}
+                                    maxLength={3000}
+                                    rows={5}
+                                    placeholder="Write a response to the student..."
+                                    className="w-full rounded-xl border border-border bg-surface p-4 font-ui text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y"
+                                />
+
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="font-ui text-[11px] text-text-muted">
+                                        {reply.length}/3000 characters
+                                    </span>
+
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            disabled={savingReply}
+                                            onClick={() => {
+                                                setReply(item.recruiterReply || "");
+                                                setIsReplying(false);
+                                                setReplyError("");
+                                            }}
+                                            className="px-3 py-2 rounded-lg border border-border text-xs font-ui font-semibold text-text-secondary hover:bg-surface-alt disabled:opacity-50"
+                                        >
+                                            Cancel
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            disabled={savingReply || !reply.trim()}
+                                            onClick={handleReplySubmit}
+                                            className="px-4 py-2 rounded-lg bg-primary text-white text-xs font-ui font-bold hover:opacity-90 disabled:opacity-50"
+                                        >
+                                            {savingReply ? "Sending..." : "Send Reply"}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {replyError && (
+                                    <p className="font-ui text-xs text-danger">
+                                        {replyError}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        {replySuccess && (
+                            <p className="font-ui text-xs text-success">
+                                {replySuccess}
+                            </p>
+                        )}
+
+                        {!item.recruiterReply && !isReplying && (
+                            <p className="font-ui text-xs text-text-muted">
+                                No response has been sent to this student yet.
+                            </p>
+                        )}
+                    </section>
                 </div>
 
-                <div className="px-5 sm:px-7 py-4 border-t border-border bg-surface/80 flex justify-end">
+                <div className="shrink-0 px-5 sm:px-7 py-4 border-t border-border bg-surface/80 flex justify-end">
                     <button
                         type="button"
                         onClick={onClose}
@@ -390,6 +542,7 @@ function FeedbackDetailsModal({ item, onClose }) {
 export default function RecruiterFeedbackPage() {
     const [feedback, setFeedback] = useState([]);
     const [stats, setStats] = useState(EMPTY_STATS);
+
     const [pagination, setPagination] = useState({
         page: 1,
         total: 0,
@@ -441,6 +594,7 @@ export default function RecruiterFeedbackPage() {
             }
 
             setFeedback(result.data || []);
+
             setStats({
                 ...EMPTY_STATS,
                 ...(result.stats || {}),
@@ -449,6 +603,7 @@ export default function RecruiterFeedbackPage() {
                     ...(result.stats?.distribution || {}),
                 },
             });
+
             setPagination(
                 result.pagination || {
                     page,
@@ -495,6 +650,22 @@ export default function RecruiterFeedbackPage() {
         }));
     }, [stats]);
 
+    function handleReplySaved(feedbackId, recruiterReply) {
+        setFeedback((current) =>
+            current.map((item) =>
+                item._id === feedbackId
+                    ? { ...item, recruiterReply }
+                    : item
+            )
+        );
+
+        setSelectedFeedback((current) =>
+            current?._id === feedbackId
+                ? { ...current, recruiterReply }
+                : current
+        );
+    }
+
     return (
         <div className="min-h-screen bg-background">
             <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-7">
@@ -536,7 +707,7 @@ export default function RecruiterFeedbackPage() {
                     <StatCard
                         label="Total Feedback"
                         value={stats.total}
-                        description="Approved student experiences"
+                        description="Total student experiences"
                         accent="bg-primary/10 text-primary"
                         icon={<span className="text-lg">▤</span>}
                     />
@@ -574,7 +745,7 @@ export default function RecruiterFeedbackPage() {
                             </h2>
 
                             <p className="font-ui text-xs text-text-muted mt-1">
-                                Based on approved student experiences.
+                                Based on submitted student experiences.
                             </p>
                         </div>
 
@@ -626,7 +797,7 @@ export default function RecruiterFeedbackPage() {
                 <section className="space-y-4">
                     <RecruiterSectionHeader
                         title="Student Experiences"
-                        subtitle="Read approved experiences submitted for your company."
+                        subtitle="Read experiences submitted by students for your company."
                     />
 
                     <div className="bg-surface border border-border rounded-[var(--radius-lg)] p-3 sm:p-4 space-y-4">
@@ -771,6 +942,7 @@ export default function RecruiterFeedbackPage() {
             <FeedbackDetailsModal
                 item={selectedFeedback}
                 onClose={() => setSelectedFeedback(null)}
+                onReplySaved={handleReplySaved}
             />
         </div>
     );

@@ -1,19 +1,52 @@
-
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Avatar from "../ui/Avatar";
 
-/**
- * Vertical student navigation sidebar.
- */
 export default function Sidebar({
   student,
   isMobileOpen = false,
   onCloseMobile,
 }) {
   const pathname = usePathname();
+
+  const studentName =
+    student?.fullName ||
+    student?.name ||
+    "Student";
+
+  const accountStatus = String(student?.status || "")
+    .trim()
+    .toLowerCase();
+
+  const isVerified = accountStatus === "active";
+
+  const university =
+    student?.profile?.university ||
+    student?.profile?.college ||
+    student?.education?.university ||
+    student?.education?.college ||
+    student?.university ||
+    student?.college ||
+    "University not specified";
+
+  const graduationYear = Number(
+    student?.profile?.graduationYear ||
+    student?.education?.graduationYear ||
+    student?.graduationYear
+  );
+
+  const currentYear = new Date().getFullYear();
+
+  const academicYear =
+    graduationYear && graduationYear > currentYear
+      ? 5 - (graduationYear - currentYear)
+      : null;
+
+  const yearLabel = graduationYear
+  ? graduationYear.toString()
+  : "Year not specified";
 
   const navItems = [
     {
@@ -53,8 +86,8 @@ export default function Sidebar({
       ),
     },
     {
-      name: "My Reports",
-      href: "/reports",
+      name: "My Feedback",
+      href: "/feedback",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" />
@@ -98,11 +131,7 @@ export default function Sidebar({
                       : "text-text-secondary hover:text-text hover:bg-surface-alt border border-transparent"
                   }`}
                 >
-                  <span
-                    className={`shrink-0 ${
-                      isActive ? "text-primary" : "text-text-muted"
-                    }`}
-                  >
+                  <span className={`shrink-0 ${isActive ? "text-primary" : "text-text-muted"}`}>
                     {item.icon}
                   </span>
 
@@ -118,36 +147,39 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Bottom Profile Card */}
+      {/* Bottom Student Profile Card */}
       <div className="p-3 border-t border-border mt-auto">
         <div className="rounded-[var(--radius-md)] bg-surface-alt border border-border p-3">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             <Avatar
-              name={student?.name || "Ashmit Sharma"}
-              initials={student?.avatarText || "AS"}
+              name={studentName}
+              initials={student?.avatarText || "ST"}
               size="sm"
               variant="brand"
             />
 
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="font-ui font-bold text-xs text-text truncate">
-                {student?.name || "Ashmit Sharma"}
+                {studentName}
               </p>
 
-              <div className="flex items-center gap-1 text-[11px] text-success mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-success" />
+              <div className={`flex items-center gap-1 text-[11px] mt-0.5 ${isVerified ? "text-success" : "text-warning"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isVerified ? "bg-success" : "bg-warning"}`} />
                 <span className="font-ui font-medium">
-                  Verified Student
+                  {isVerified ? "Verified Student" : "Pending Verification"}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="mt-2.5 pt-2 border-t border-border/80 flex items-center justify-between text-[11px] text-text-muted">
-            <span className="font-ui">
-              Lovely Professional University
+          <div className="mt-2.5 pt-2 border-t border-border/80 flex items-center justify-between gap-3 text-[11px] text-text-muted">
+            <span className="font-ui min-w-0 flex-1">
+              {university}
             </span>
-            <span className="font-mono text-[10px]">3rd Year</span>
+
+            <span className="font-mono text-[10px] shrink-0">
+              {yearLabel}
+            </span>
           </div>
         </div>
       </div>

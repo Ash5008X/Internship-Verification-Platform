@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const studentExperienceSchema = new mongoose.Schema(
@@ -9,20 +8,17 @@ const studentExperienceSchema = new mongoose.Schema(
             required: true,
             index: true,
         },
-
         internshipId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Internship",
             default: null,
         },
-
         companyId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Company",
             required: true,
             index: true,
         },
-
         employmentStatus: {
             type: String,
             enum: [
@@ -36,58 +32,34 @@ const studentExperienceSchema = new mongoose.Schema(
             ],
             required: true,
         },
-
-        applicationExperience: {
+        experience: {
             type: String,
+            required: true,
             trim: true,
             maxlength: 5000,
-            default: "",
         },
-
-        interviewExperience: {
+        improvements: {
             type: String,
             trim: true,
-            maxlength: 5000,
+            maxlength: 2000,
             default: "",
         },
-
-        workExperience: {
-            type: String,
-            trim: true,
-            maxlength: 10000,
-            default: "",
-        },
-
-        outcome: {
+        recruiterReply: {
             type: String,
             trim: true,
             maxlength: 3000,
             default: "",
         },
-
         rating: {
             type: Number,
             min: 1,
             max: 5,
             default: null,
         },
-
-        feedback: {
-            type: String,
-            trim: true,
-            maxlength: 5000,
-            default: "",
-        },
-
-        evidenceRefs: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "VerificationRecord",
-        }],
-
         moderationStatus: {
             type: String,
             enum: ["pending", "approved", "rejected"],
-            default: "pending",
+            default: "approved",
             index: true,
         },
     },

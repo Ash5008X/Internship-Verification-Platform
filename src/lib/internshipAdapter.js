@@ -1,13 +1,7 @@
-
 export function formatStipend(stipend) {
   if (!stipend) return "Stipend not specified";
-
   if (stipend.period === "unpaid") return "Unpaid";
-
-  if (
-    stipend.amount === null ||
-    stipend.amount === undefined
-  ) {
+  if (stipend.amount === null || stipend.amount === undefined) {
     return "Stipend not disclosed";
   }
 
@@ -31,28 +25,18 @@ export function formatDuration(duration) {
   }
 
   const unit = duration.unit;
-
-  return `${duration.value} ${unit.replace(/s$/, "")}${
-    duration.value > 1 ? "s" : ""
-  }`;
+  return `${duration.value} ${unit.replace(/s$/, "")}${duration.value > 1 ? "s" : ""}`;
 }
 
 export function formatLocation(location) {
   if (!location) return "Location not specified";
 
-  const parts = [
-    location.city,
-    location.state,
-    location.country,
-  ].filter(Boolean);
-
+  const parts = [location.city, location.state, location.country].filter(Boolean);
   return parts.length ? parts.join(", ") : "Location not specified";
 }
 
 export function calculateSkillMatch(requiredSkills = [], userSkills = []) {
-  if (!requiredSkills.length || !userSkills.length) {
-    return null;
-  }
+  if (!requiredSkills.length || !userSkills.length) return null;
 
   const normalizedUserSkills = new Set(
     userSkills.map((skill) => skill.trim().toLowerCase())
@@ -68,7 +52,7 @@ export function calculateSkillMatch(requiredSkills = [], userSkills = []) {
 export function adaptInternship(internship, userSkills = [], bookmarkedIds = []) {
   const company = internship.company || {};
   const risk = internship.riskAssessment;
-
+  const eligibility = internship.eligibility || {};
   const id = internship._id?.toString();
 
   return {
@@ -83,6 +67,7 @@ export function adaptInternship(internship, userSkills = [], bookmarkedIds = [])
       .slice(0, 2)
       .toUpperCase(),
 
+    category: internship.category || "",
     location: formatLocation(internship.location),
     workMode: internship.workMode || "unspecified",
     duration: formatDuration(internship.duration),
@@ -97,15 +82,19 @@ export function adaptInternship(internship, userSkills = [], bookmarkedIds = [])
     riskScore: risk?.score ?? null,
 
     skills: internship.requiredSkills || [],
+    preferredSkills: internship.preferredSkills || [],
+    eligibility: {
+      degrees: eligibility.degrees || [],
+      graduationYears: eligibility.graduationYears || [],
+      minimumExperienceMonths: eligibility.minimumExperienceMonths ?? null,
+      otherRequirements: eligibility.otherRequirements || "",
+    },
     description: internship.description || "",
     workItems: [],
-    
+
     applicationDeadline: internship.applicationDeadline,
     applicationType:
-      internship.applicationMethod === "internal"
-        ? "Easy Apply"
-        : "External Apply",
-
+      internship.applicationMethod === "internal" ? "Easy Apply" : "External Apply",
     applicationUrl: internship.applicationUrl || null,
 
     verification: {
@@ -113,12 +102,13 @@ export function adaptInternship(internship, userSkills = [], bookmarkedIds = [])
     },
 
     isBookmarked: bookmarkedIds.includes(id),
-
     postedTime: internship.createdAt
       ? new Date(internship.createdAt).toLocaleDateString("en-IN")
       : "Recently",
 
-    applicantsCount: null,
+    applicantsCount: Number.isFinite(internship.applicantsCount)
+      ? internship.applicantsCount
+      : 0,
   };
 }
 

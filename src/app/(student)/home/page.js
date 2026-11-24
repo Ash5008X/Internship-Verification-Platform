@@ -350,9 +350,15 @@ export default function StudentDashboardPage() {
     [applications]
   );
 
-  const unreadNotifications = notifications.filter(
-    (notification) => !notification.isRead
-  ).length;
+  const latestNotification = useMemo(() => {
+    if (!notifications.length) return null;
+
+    return [...notifications].sort(
+      (a, b) =>
+        new Date(b.createdAt || 0).getTime() -
+        new Date(a.createdAt || 0).getTime()
+    )[0];
+  }, [notifications]);
 
   async function handleApply(internship) {
     if (!internship?._id || applyingId) return;
@@ -681,63 +687,41 @@ export default function StudentDashboardPage() {
             </section>
 
             <section className="rounded-2xl border border-border bg-surface p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="font-display text-lg font-bold text-text">
-                    Notifications
-                  </h2>
+              <div>
+                <h2 className="font-display text-lg font-bold text-text">
+                  Notifications
+                </h2>
 
-                  <p className="mt-1 text-xs text-text-muted">
-                    Your latest account updates.
-                  </p>
-                </div>
-
-                {unreadNotifications > 0 && (
-                  <span className="rounded-full bg-rose-soft px-2.5 py-1 text-xs font-bold text-primary">
-                    {unreadNotifications} unread
-                  </span>
-                )}
+                <p className="mt-1 text-xs text-text-muted">
+                  Your latest account update.
+                </p>
               </div>
 
-              {notifications.length > 0 ? (
-                <div className="mt-4 space-y-3">
-                  {notifications.slice(0, 4).map((notification) => (
-                    <div
-                      key={notification._id}
-                      className="border-b border-border pb-3 last:border-0 last:pb-0"
-                    >
-                      <div className="flex items-start gap-2">
-                        {!notification.isRead && (
-                          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                        )}
+              {latestNotification ? (
+                <div className="mt-4 rounded-xl bg-background p-4">
+                  <div className="flex items-start gap-2">
+                    {!latestNotification.isRead && (
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                    )}
 
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-text">
-                            {notification.title || "Account update"}
-                          </p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-text">
+                        {latestNotification.title || "Account update"}
+                      </p>
 
-                          <p className="mt-1 text-xs leading-5 text-text-secondary">
-                            {notification.message ||
-                              "You have a new notification."}
-                          </p>
+                      <p className="mt-1 text-xs leading-5 text-text-secondary">
+                        {latestNotification.message ||
+                          "You have a new notification."}
+                      </p>
 
-                          <p className="mt-1 text-[10px] text-text-muted">
-                            {formatDate(notification.createdAt)}
-                          </p>
-                        </div>
-                      </div>
+                      <p className="mt-2 text-[10px] text-text-muted">
+                        {formatDate(latestNotification.createdAt)}
+                      </p>
                     </div>
-                  ))}
-
-                  <Link
-                    href="/settings"
-                    className="inline-block pt-1 text-xs font-bold text-primary hover:underline"
-                  >
-                    Manage notification preferences →
-                  </Link>
+                  </div>
                 </div>
               ) : (
-                <p className="mt-4 rounded-xl bg-background p-4 text-center text-xs text-text-muted">
+                <p className="mt-4 rounded-xl bg-background p-5 text-center text-sm text-text-muted">
                   You have no notifications yet.
                 </p>
               )}

@@ -48,37 +48,44 @@ const studentInitial = studentName.trim().charAt(0).toUpperCase() || "S";
   }, []);
 
   useEffect(() => {
-    let active = true;
+      let active = true;
 
-    async function fetchNotifications() {
-      try {
-        const response = await fetch("/api/notifications", {
-          credentials: "include",
-          cache: "no-store",
-        });
+      async function fetchNotifications() {
+          try {
+              const response = await fetch("/api/notifications", {
+                  credentials: "include",
+                  cache: "no-store",
+              });
 
-        const result = await response.json();
+              const result = await response.json();
 
-        if (!response.ok || !result.success) {
-          throw new Error(result.message || "Unable to fetch notifications.");
-        }
+              if (!response.ok || !result.success) {
+                  throw new Error(
+                      result.message || "Unable to fetch notifications."
+                  );
+              }
 
-        if (active) {
-          setNotifications(result.data || []);
-          setUnreadCount(result.unreadCount || 0);
-        }
-      } catch (error) {
-        console.error("Notification fetch error:", error);
-      } finally {
-        if (active) setNotificationsLoading(false);
+              if (active) {
+                  setNotifications(result.data || []);
+                  setUnreadCount(result.unreadCount || 0);
+              }
+          } catch (error) {
+              console.error("Notification fetch error:", error);
+          } finally {
+              if (active) {
+                  setNotificationsLoading(false);
+              }
+          }
       }
-    }
 
-    fetchNotifications();
+      fetchNotifications();
 
-    return () => {
-      active = false;
-    };
+      const interval = setInterval(fetchNotifications, 15000);
+
+      return () => {
+          active = false;
+          clearInterval(interval);
+      };
   }, []);
 
   // Close dropdown when clicking outside or pressing Escape.

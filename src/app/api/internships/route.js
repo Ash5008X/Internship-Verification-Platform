@@ -6,6 +6,7 @@ import { connectDB } from "@/config/db";
 import Internship from "@/models/Internship";
 import Company from "@/models/Company";
 import RiskAssessment from "@/models/RiskAssessment";
+import Application from "@/models/Application";
 
 import { requireRecruiter } from "@/lib/auth/requireRecruiter";
 import { getRecruiterCompany } from "@/lib/auth/getRecruiterCompany";
@@ -828,10 +829,39 @@ export async function GET(request) {
             .limit(limit)
             .lean();
 
-        // Retrieve latest assessments for the returned internships.
+        // Count submitted applications for each returned internship.
+        // Saved and withdrawn records are not counted as applicants.
         const internshipIds = internships.map(
             (internship) => internship._id
         );
+
+        const applicantCounts = internshipIds.length
+            ? await Application.aggregate([
+                {
+                    $match: {
+                        internshipId: { $in: internshipIds },
+                        status: {
+                            $in: ["applied", "interviewing", "offered", "rejected"],
+                        },
+                    },
+                },
+                {
+                    $group: {
+                        _id: "$internshipId",
+                        count: { $sum: 1 },
+                    },
+                },
+            ])
+            : [];
+
+        const applicantsByInternship = new Map(
+            applicantCounts.map((item) => [
+                item._id.toString(),
+                item.count,
+            ])
+        );
+
+        // Retrieve latest assessments for the returned internships.
 
         const latestAssessments = internshipIds.length
             ? await RiskAssessment.aggregate([
@@ -882,6 +912,8 @@ export async function GET(request) {
                         assessedAt: assessment.assessedAt,
                     }
                     : null,
+                applicantsCount:
+                    applicantsByInternship.get(internship._id.toString()) || 0,
             };
         });
 

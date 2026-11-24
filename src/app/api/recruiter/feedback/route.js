@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 
 import { connectDB } from "@/config/db";
@@ -24,15 +25,19 @@ function serializeExperience(item) {
 
     return {
         _id: item._id.toString(),
+
         student: student
             ? {
                   name: student.name || "Student",
-                  university: student.profile?.college || "University not specified",
+                  university:
+                      student.profile?.college ||
+                      "University not specified",
               }
             : {
                   name: "Anonymous student",
                   university: "University not specified",
               },
+
         internship: internship
             ? {
                   title: internship.title || "Internship",
@@ -42,14 +47,13 @@ function serializeExperience(item) {
                   title: "Internship not specified",
                   category: "General",
               },
+
         employmentStatus: item.employmentStatus,
-        applicationExperience: item.applicationExperience || "",
-        interviewExperience: item.interviewExperience || "",
-        workExperience: item.workExperience || "",
-        outcome: item.outcome || "",
+        experience: item.experience || "",
+        improvements: item.improvements || "",
+        recruiterReply: item.recruiterReply || "",
         rating: item.rating ?? null,
         category: item.rating ? getCategory(item.rating) : "Unrated",
-        feedback: item.feedback || "",
         submittedAt: item.createdAt,
     };
 }
@@ -110,13 +114,15 @@ export async function GET(request) {
             );
         }
 
+        // Fetch all feedback belonging to this recruiter's company.
+        // No moderation status is required.
         const baseFilter = {
             companyId: company._id,
-            moderationStatus: "approved",
         };
 
         const filter = { ...baseFilter };
 
+        // Search by student, internship, experience, or improvements.
         if (search) {
             const expression = new RegExp(
                 escapeRegex(search),
@@ -154,22 +160,18 @@ export async function GET(request) {
                         $in: matchingInternships.map((item) => item._id),
                     },
                 },
-                { feedback: expression },
-                { applicationExperience: expression },
-                { interviewExperience: expression },
-                { workExperience: expression },
-                { outcome: expression },
+                { experience: expression },
+                { improvements: expression },
             ];
         }
 
-        if (category) {
-            if (category === "Positive") {
-                filter.rating = { $gte: 4 };
-            } else if (category === "Neutral") {
-                filter.rating = 3;
-            } else {
-                filter.rating = { $gte: 1, $lte: 2 };
-            }
+        // Filter by rating category.
+        if (category === "Positive") {
+            filter.rating = { $gte: 4 };
+        } else if (category === "Neutral") {
+            filter.rating = 3;
+        } else if (category === "Negative") {
+            filter.rating = { $gte: 1, $lte: 2 };
         }
 
         const [
@@ -203,6 +205,7 @@ export async function GET(request) {
                         _id: null,
                         total: { $sum: 1 },
                         averageRating: { $avg: "$rating" },
+
                         positive: {
                             $sum: {
                                 $cond: [
@@ -212,6 +215,7 @@ export async function GET(request) {
                                 ],
                             },
                         },
+
                         neutral: {
                             $sum: {
                                 $cond: [
@@ -221,6 +225,7 @@ export async function GET(request) {
                                 ],
                             },
                         },
+
                         negative: {
                             $sum: {
                                 $cond: [
@@ -277,7 +282,9 @@ export async function GET(request) {
 
         return NextResponse.json({
             success: true,
+
             data: experiences.map(serializeExperience),
+
             stats: {
                 total: stats.total,
                 averageRating: Number(
@@ -288,6 +295,7 @@ export async function GET(request) {
                 negative: stats.negative,
                 distribution,
             },
+
             pagination: {
                 page,
                 limit,

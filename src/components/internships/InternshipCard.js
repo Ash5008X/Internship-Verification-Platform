@@ -1,6 +1,5 @@
 
 import Avatar from "../ui/Avatar";
-import MatchBadge from "./MatchBadge";
 import IconButton from "../ui/IconButton";
 
 /**
@@ -20,7 +19,6 @@ export default function InternshipCard({
     location,
     workMode,
     stipend,
-    matchPercentage,
     isBookmarked,
     skills = [],
     initials,
@@ -128,10 +126,8 @@ export default function InternshipCard({
         <span className="shrink-0">{workMode}</span>
       </div>
 
-      {/* Match Score & Stipend */}
-      <div className="mt-3 flex items-center justify-between gap-2 pt-2.5 border-t border-border/60">
-        <MatchBadge percentage={matchPercentage} size="xs" />
-
+      {/* Stipend */}
+      <div className="mt-3 flex items-center justify-end gap-2 pt-2.5 border-t border-border/60">
         <div className="text-right shrink-0">
           <span className="font-number font-bold text-xs text-text">
             {stipend}
