@@ -7,27 +7,44 @@ import {
     createAuthToken,
     getAuthCookieOptions,
 } from "@/lib/auth/auth";
+import { loginSchema } from "@/lib/validations/auth";
 
 export async function POST(request) {
     try {
-        await connectDB();
+        let body;
 
-        const body = await request.json();
-
-        const email = body.email?.trim().toLowerCase();
-        const password = body.password;
-
-        if (!email || typeof password !== "string" || !password) {
+        try {
+            body = await request.json();
+        } catch {
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Email and password are required.",
+                    message: "Invalid request body.",
                 },
                 { status: 400 }
             );
         }
 
-        const user = await User.findOne({ email }).select("+passwordHash");
+        const validation = loginSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Please enter valid login credentials.",
+                    errors: validation.error.flatten().fieldErrors,
+                },
+                { status: 400 }
+            );
+        }
+
+        const { email, password } = validation.data;
+
+        await connectDB();
+
+        const user = await User.findOne({
+            email,
+        }).select("+passwordHash");
 
         if (!user) {
             return NextResponse.json(

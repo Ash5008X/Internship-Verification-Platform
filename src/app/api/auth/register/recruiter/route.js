@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/config/db";
@@ -7,87 +8,80 @@ import {
     createAuthToken,
     getAuthCookieOptions,
 } from "@/lib/auth/auth";
+import { recruiterRegisterSchema } from "@/lib/validations/auth";
 
 export async function POST(request) {
     let createdUser = null;
 
     try {
+        let body;
+
+        try {
+            body = await request.json();
+        } catch {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Invalid request body.",
+                },
+                { status: 400 }
+            );
+        }
+
+        const validation = recruiterRegisterSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Please correct the validation errors.",
+                    errors: validation.error.flatten().fieldErrors,
+                },
+                { status: 400 }
+            );
+        }
+
+        const {
+            fullName,
+            workEmail,
+            companyName,
+            companyWebsite,
+            jobTitle,
+            password,
+        } = validation.data;
+
         await connectDB();
 
-        const body = await request.json();
+        const website = companyWebsite
+            ? new URL(companyWebsite).origin
+            : null;
 
-        const name = body.fullName?.trim();
-        const email = body.workEmail?.trim().toLowerCase();
-        const companyName = body.companyName?.trim();
-        const jobTitle = body.jobTitle?.trim();
-        const password = body.password;
-        const websiteInput = body.companyWebsite?.trim() || "";
+        const domain = companyWebsite
+            ? new URL(companyWebsite).hostname.toLowerCase().replace(/^www\./, "")
+            : null;
 
-        if (!name || name.length < 2 || name.length > 100) {
-            return NextResponse.json(
-                { success: false, message: "Enter a valid full name." },
-                { status: 400 }
-            );
-        }
+        const normalizedName = companyName
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .trim();
 
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            return NextResponse.json(
-                { success: false, message: "Enter a valid work email." },
-                { status: 400 }
-            );
-        }
-
-        if (!companyName || companyName.length > 200 || !jobTitle || jobTitle.length > 120) {
-            return NextResponse.json(
-                { success: false, message: "Company name and job title are required." },
-                { status: 400 }
-            );
-        }
-
-        if (typeof password !== "string" || password.length < 8 || password.length > 128) {
-            return NextResponse.json(
-                { success: false, message: "Password must be between 8 and 128 characters." },
-                { status: 400 }
-            );
-        }
-
-        let website = null;
-        let domain = null;
-
-        if (websiteInput) {
-            try {
-                const normalizedWebsite = websiteInput.startsWith("http")
-                    ? websiteInput
-                    : `https://${websiteInput}`;
-
-                const parsedWebsite = new URL(normalizedWebsite);
-
-                if (!["http:", "https:"].includes(parsedWebsite.protocol)) {
-                    throw new Error("Invalid protocol");
-                }
-
-                website = parsedWebsite.origin;
-                domain = parsedWebsite.hostname.toLowerCase().replace(/^www\./, "");
-            } catch {
-                return NextResponse.json(
-                    { success: false, message: "Enter a valid company website." },
-                    { status: 400 }
-                );
-            }
-        }
-
-        const normalizedName = companyName.toLowerCase().replace(/\s+/g, " ").trim();
-
-        const existingUser = await User.findOne({ email }).select("_id");
+        const existingUser = await User.findOne({
+            email: workEmail,
+        }).select("_id");
 
         if (existingUser) {
             return NextResponse.json(
-                { success: false, message: "An account with this email already exists." },
+                {
+                    success: false,
+                    message: "An account with this email already exists.",
+                },
                 { status: 409 }
             );
         }
 
-        const existingCompany = await Company.findOne({ normalizedName }).select("_id");
+        const existingCompany = await Company.findOne({
+            normalizedName,
+        }).select("_id");
 
         if (existingCompany) {
             return NextResponse.json(
@@ -102,8 +96,8 @@ export async function POST(request) {
         const passwordHash = await bcrypt.hash(password, 12);
 
         createdUser = await User.create({
-            name,
-            email,
+            name: fullName,
+            email: workEmail,
             passwordHash,
             role: "recruiter",
             status: "active",
@@ -117,7 +111,7 @@ export async function POST(request) {
             normalizedName,
             website,
             domain,
-            contactEmail: email,
+            contactEmail: workEmail,
             identityStatus: "pending",
             createdBy: createdUser._id,
         });
@@ -153,12 +147,17 @@ export async function POST(request) {
         return response;
     } catch (error) {
         if (createdUser?._id) {
-            await User.deleteOne({ _id: createdUser._id }).catch(() => {});
+            await User.deleteOne({
+                _id: createdUser._id,
+            }).catch(() => {});
         }
 
         if (error.code === 11000) {
             return NextResponse.json(
-                { success: false, message: "This account or company is already registered." },
+                {
+                    success: false,
+                    message: "This account or company is already registered.",
+                },
                 { status: 409 }
             );
         }
@@ -166,7 +165,10 @@ export async function POST(request) {
         console.error("Recruiter registration error:", error);
 
         return NextResponse.json(
-            { success: false, message: "Unable to create your recruiter account." },
+            {
+                success: false,
+                message: "Unable to create your recruiter account.",
+            },
             { status: 500 }
         );
     }

@@ -1737,6 +1737,13 @@ body {
   max-width: 100%;
   min-width: 0;
 }
+.auth-error {
+    display: block;
+    margin-top: 6px;
+    color: #e11d48;
+    font-size: 12px;
+    line-height: 1.4;
+}
 
 @media (max-width: 640px) {
   .auth-form-slide.active:has(.auth-register-content) {

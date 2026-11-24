@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { loginSchema } from "@/lib/validations/auth";
 
 export default function LoginForm({ onToggle }) {
     const [showPassword, setShowPassword] = useState(false);
@@ -9,6 +10,8 @@ export default function LoginForm({ onToggle }) {
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [errors, setErrors] = useState({});
 
     useEffect(() => {
         const savedEmail = localStorage.getItem("interncheck_saved_email");
@@ -18,14 +21,51 @@ export default function LoginForm({ onToggle }) {
         }
     }, []);
 
+    function handleEmailChange(event) {
+        setEmail(event.target.value);
+
+        setErrors((previous) => ({
+            ...previous,
+            email: "",
+        }));
+
+        setMessage("");
+    }
+
+    function handlePasswordChange(event) {
+        setPassword(event.target.value);
+
+        setErrors((previous) => ({
+            ...previous,
+            password: "",
+        }));
+
+        setMessage("");
+    }
+
     async function handleSubmit(event) {
         event.preventDefault();
 
-        const form = event.currentTarget;
-        const formData = new FormData(form);
+        setMessage("");
+        setErrors({});
+
+        const validation = loginSchema.safeParse({
+            email,
+            password,
+        });
+
+        if (!validation.success) {
+            const fieldErrors = validation.error.flatten().fieldErrors;
+
+            setErrors({
+                email: fieldErrors.email?.[0] || "",
+                password: fieldErrors.password?.[0] || "",
+            });
+
+            return;
+        }
 
         setLoading(true);
-        setMessage("");
 
         try {
             const response = await fetch("/api/auth/login", {
@@ -34,8 +74,7 @@ export default function LoginForm({ onToggle }) {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    email: formData.get("email"),
-                    password: formData.get("password"),
+                    ...validation.data,
                     rememberMe,
                 }),
             });
@@ -49,7 +88,7 @@ export default function LoginForm({ onToggle }) {
             if (rememberMe) {
                 localStorage.setItem(
                     "interncheck_saved_email",
-                    formData.get("email").trim()
+                    validation.data.email
                 );
             } else {
                 localStorage.removeItem("interncheck_saved_email");
@@ -79,7 +118,11 @@ export default function LoginForm({ onToggle }) {
                     Pick up where your internship journey left off.
                 </p>
 
-                <form className="auth-form" onSubmit={handleSubmit}>
+                <form
+                    className="auth-form"
+                    onSubmit={handleSubmit}
+                    noValidate
+                >
                     <label className="auth-field">
                         <span className="auth-label">Email address</span>
 
@@ -90,9 +133,20 @@ export default function LoginForm({ onToggle }) {
                             placeholder="you@college.edu"
                             autoComplete="email"
                             value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            required
+                            onChange={handleEmailChange}
+                            aria-invalid={Boolean(errors.email)}
+                            aria-describedby={errors.email ? "login-email-error" : undefined}
                         />
+
+                        {errors.email && (
+                            <span
+                                className="auth-error"
+                                id="login-email-error"
+                                role="alert"
+                            >
+                                {errors.email}
+                            </span>
+                        )}
                     </label>
 
                     <label className="auth-field">
@@ -105,7 +159,10 @@ export default function LoginForm({ onToggle }) {
                                 name="password"
                                 placeholder="Enter your password"
                                 autoComplete="current-password"
-                                required
+                                value={password}
+                                onChange={handlePasswordChange}
+                                aria-invalid={Boolean(errors.password)}
+                                aria-describedby={errors.password ? "login-password-error" : undefined}
                             />
 
                             <button
@@ -117,6 +174,16 @@ export default function LoginForm({ onToggle }) {
                                 {showPassword ? "Hide" : "Show"}
                             </button>
                         </span>
+
+                        {errors.password && (
+                            <span
+                                className="auth-error"
+                                id="login-password-error"
+                                role="alert"
+                            >
+                                {errors.password}
+                            </span>
+                        )}
                     </label>
 
                     <div className="auth-form-options">
