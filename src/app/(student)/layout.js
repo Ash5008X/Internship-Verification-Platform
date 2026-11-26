@@ -9,6 +9,7 @@ import Sidebar from "@/components/shared/Sidebar";
 export default function StudentLayout({ children }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [student, setStudent] = useState(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -23,6 +24,8 @@ export default function StudentLayout({ children }) {
         }
       } catch (error) {
         console.error("Unable to load student profile:", error);
+      } finally {
+        if (active) setIsUserLoading(false);
       }
     }
 
@@ -37,6 +40,7 @@ export default function StudentLayout({ children }) {
     <div className="min-h-screen bg-background">
       <Navbar
         student={student}
+        isLoading={isUserLoading}
         onToggleMobileSidebar={() =>
           setIsMobileSidebarOpen((prev) => !prev)
         }
@@ -45,6 +49,7 @@ export default function StudentLayout({ children }) {
       <div className="flex">
         <Sidebar
           student={student}
+          isLoading={isUserLoading}
           isMobileOpen={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
         />

@@ -7,6 +7,7 @@ import RecruiterSidebar from "@/components/shared/recruiter/RecruiterSidebar";
 export default function RecruiterLayout({ children }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [recruiter, setRecruiter] = useState(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -25,6 +26,8 @@ export default function RecruiterLayout({ children }) {
         }
       } catch (error) {
         console.error("Unable to load recruiter profile:", error);
+      } finally {
+        if (active) setIsUserLoading(false);
       }
     }
 
@@ -39,6 +42,7 @@ export default function RecruiterLayout({ children }) {
     <div className="min-h-screen bg-background">
       <RecruiterNavbar
         recruiter={recruiter}
+        isLoading={isUserLoading}
         onToggleMobileSidebar={() =>
           setIsMobileSidebarOpen((previous) => !previous)
         }
@@ -47,6 +51,7 @@ export default function RecruiterLayout({ children }) {
       <div className="flex">
         <RecruiterSidebar
           recruiter={recruiter}
+          isLoading={isUserLoading}
           isMobileOpen={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
         />

@@ -1,11 +1,13 @@
 "use client";
 
+import { NavigationSkeleton } from "@/components/shared/loading/WorkspaceChromeSkeleton";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Avatar from "../ui/Avatar";
 
 export default function Sidebar({
   student,
+  isLoading = false,
   isMobileOpen = false,
   onCloseMobile,
 }) {
@@ -105,7 +107,9 @@ export default function Sidebar({
     },
   ];
 
-  const sidebarContent = (
+  const sidebarContent = isLoading ? (
+    <NavigationSkeleton />
+  ) : (
     <div className="flex flex-col h-full justify-between">
       <div>
         <div className="px-3 py-2">

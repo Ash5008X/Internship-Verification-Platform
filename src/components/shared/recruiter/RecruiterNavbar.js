@@ -5,9 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Avatar from "../../ui/Avatar";
 import IconButton from "../../ui/IconButton";
+import { AccountSkeleton } from "@/components/shared/loading/WorkspaceChromeSkeleton";
 
 export default function RecruiterNavbar({
   recruiter,
+  isLoading = false,
   onToggleMobileSidebar,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -353,6 +355,7 @@ export default function RecruiterNavbar({
           <div className="h-6 w-px bg-border hidden sm:block" />
 
           {/* Recruiter account dropdown */}
+          {isLoading ? <AccountSkeleton /> : (
           <div className="relative" ref={menuRef}>
             <button
               type="button"
@@ -535,6 +538,7 @@ export default function RecruiterNavbar({
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
     </header>

@@ -1,6 +1,7 @@
 
 "use client";
 
+import { NavigationSkeleton } from "@/components/shared/loading/WorkspaceChromeSkeleton";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Avatar from "../../ui/Avatar";
@@ -8,6 +9,7 @@ import {useState,useEffect} from "react";
 
 export default function RecruiterSidebar({
   recruiter,
+  isLoading = false,
   isMobileOpen = false,
   onCloseMobile,
 }) {
@@ -142,7 +144,9 @@ const jobTitle =
     },
   ];
 
-  const sidebarContent = (
+  const sidebarContent = isLoading ? (
+    <NavigationSkeleton recruiter />
+  ) : (
     <div className="flex flex-col h-full justify-between">
       <div>
         <div className="px-3 py-2">

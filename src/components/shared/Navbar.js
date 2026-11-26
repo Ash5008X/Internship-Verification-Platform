@@ -4,9 +4,11 @@
 import { useState, useEffect, useRef } from "react";
 import Avatar from "../ui/Avatar";
 import IconButton from "../ui/IconButton";
+import { AccountSkeleton } from "@/components/shared/loading/WorkspaceChromeSkeleton";
 
 export default function Navbar({
   student,
+  isLoading = false,
   onToggleMobileSidebar,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -381,6 +383,7 @@ const studentInitial = studentName.trim().charAt(0).toUpperCase() || "S";
           <div className="h-6 w-px bg-border hidden sm:block" />
 
           {/* Profile Dropdown */}
+          {isLoading ? <AccountSkeleton /> : (
           <div className="relative" ref={menuRef}>
             <button
               type="button"
@@ -583,6 +586,7 @@ const studentInitial = studentName.trim().charAt(0).toUpperCase() || "S";
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
     </header>
