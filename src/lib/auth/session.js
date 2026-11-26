@@ -20,7 +20,10 @@ export async function getCurrentUser() {
         .select("-passwordHash")
         .lean();
 
-    if (!user || user.status !== "active") {
+    if (
+        !user ||
+        !["active", "pending_verification"].includes(user.status)
+    ) {
         return null;
     }
 

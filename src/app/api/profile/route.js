@@ -30,6 +30,7 @@ export async function GET() {
                 id: user._id,
                 name: user.name || "",
                 email: user.email || "",
+                isEmailVerified: Boolean(user.isEmailVerified),
                 avatarUrl: user.avatarUrl || null,
                 profile: {
                     college: user.profile?.college || "",

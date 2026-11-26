@@ -4,10 +4,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ProfileSection from "@/components/shared/ProfileSection";
 import FormField from "@/components/shared/FormField";
+import EmailVerification from "@/components/shared/EmailVerification";
 
 const EMPTY_PROFILE = {
   name: "",
   email: "",
+  isEmailVerified: false,
   avatarUrl: null,
   college: "",
   degree: "",
@@ -105,6 +107,7 @@ export default function StudentProfilePage() {
       const data = {
         name: user.name || "",
         email: user.email || "",
+        isEmailVerified: Boolean(user.isEmailVerified),
         avatarUrl: user.avatarUrl || null,
         college: userProfile.college || "",
         degree: userProfile.degree || "",
@@ -304,6 +307,7 @@ export default function StudentProfilePage() {
       const updatedProfile = {
         name: user.name || "",
         email: user.email || "",
+        isEmailVerified: Boolean(user.isEmailVerified),
         avatarUrl: user.avatarUrl || null,
         college: userProfile.college || "",
         degree: userProfile.degree || "",
@@ -448,6 +452,11 @@ export default function StudentProfilePage() {
               <p className="font-ui text-xs text-text-secondary mt-1 break-all">
                 {profile.email}
               </p>
+              <EmailVerification
+                email={profile.email}
+                isVerified={profile.isEmailVerified}
+                onVerified={() => setProfile((previous) => ({ ...previous, isEmailVerified: true }))}
+              />
             </div>
           </div>
 

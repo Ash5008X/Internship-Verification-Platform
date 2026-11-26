@@ -749,6 +749,14 @@ export default function RecruiterDashboardPage() {
                             >
                                 View recruiter profile
                             </Link>
+                            {!recruiter?.isEmailVerified && (
+                                <Link
+                                    href="/recruiter/profile"
+                                    className="block w-full rounded-[var(--radius-md)] bg-primary py-2.5 text-center text-xs font-semibold text-white transition hover:opacity-90"
+                                >
+                                    Verify Yourself
+                                </Link>
+                            )}
                         </div>
                     </section>
 

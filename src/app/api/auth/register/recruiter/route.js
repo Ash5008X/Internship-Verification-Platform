@@ -100,7 +100,7 @@ export async function POST(request) {
             email: workEmail,
             passwordHash,
             role: "recruiter",
-            status: "active",
+            status: "pending_verification",
             recruiterProfile: {
                 jobTitle,
             },
@@ -121,12 +121,14 @@ export async function POST(request) {
         const response = NextResponse.json(
             {
                 success: true,
-                message: "Recruiter account created successfully.",
+                message: "Recruiter account created. Please verify your email to activate your account.",
                 user: {
                     id: createdUser._id,
                     name: createdUser.name,
                     email: createdUser.email,
                     role: createdUser.role,
+                    status: createdUser.status,
+                    isEmailVerified: createdUser.isEmailVerified,
                     recruiterProfile: createdUser.recruiterProfile,
                 },
                 company: {

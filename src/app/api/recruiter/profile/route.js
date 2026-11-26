@@ -19,6 +19,7 @@ function serializeProfile(user, company) {
             jobTitle: user.recruiterProfile?.jobTitle || "",
             avatarUrl: user.avatarUrl || null,
             status: user.status || "pending",
+            isEmailVerified: Boolean(user.isEmailVerified),
         },
         company: {
             id: company._id.toString(),

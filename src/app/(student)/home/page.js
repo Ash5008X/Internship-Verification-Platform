@@ -539,12 +539,14 @@ export default function StudentDashboardPage() {
               Explore internships
             </Link>
 
-            <Link
-              href="/profile"
-              className="rounded-xl border border-border px-5 py-3 text-sm font-semibold text-text transition hover:bg-background"
-            >
-              Complete profile
-            </Link>
+            {!student?.isEmailVerified && (
+              <Link
+                href="/profile"
+                className="rounded-xl border border-border px-5 py-3 text-sm font-semibold text-text transition hover:bg-background"
+              >
+                Verify Yourself
+              </Link>
+            )}
           </div>
         </section>
 

@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import ProfileSection from "@/components/shared/ProfileSection";
 import FormField from "@/components/shared/FormField";
+import EmailVerification from "@/components/shared/EmailVerification";
 
 const EMPTY_PROFILE = {
     recruiter: {
@@ -121,6 +122,7 @@ export default function RecruiterProfilePage() {
                 recruiter: {
                     ...EMPTY_PROFILE.recruiter,
                     ...result.data.recruiter,
+                    isEmailVerified: Boolean(result.data.recruiter?.isEmailVerified),
                 },
                 company: {
                     ...EMPTY_PROFILE.company,
@@ -223,6 +225,7 @@ export default function RecruiterProfilePage() {
                 recruiter: {
                     ...EMPTY_PROFILE.recruiter,
                     ...result.data.recruiter,
+                    isEmailVerified: Boolean(result.data.recruiter?.isEmailVerified),
                 },
                 company: {
                     ...EMPTY_PROFILE.company,
@@ -421,12 +424,22 @@ export default function RecruiterProfilePage() {
                                 required
                             />
 
-                            <FormField
-                                label="Email Address"
-                                value={profile.recruiter.email}
-                                type="email"
-                                disabled
-                            />
+                            <div>
+                                <FormField
+                                    label="Email Address"
+                                    value={profile.recruiter.email}
+                                    type="email"
+                                    disabled
+                                />
+                                <EmailVerification
+                                    email={profile.recruiter.email}
+                                    isVerified={profile.recruiter.isEmailVerified}
+                                    onVerified={() => setProfile((previous) => ({
+                                        ...previous,
+                                        recruiter: { ...previous.recruiter, isEmailVerified: true },
+                                    }))}
+                                />
+                            </div>
 
                             <FormField
                                 label="Job Title"

@@ -24,6 +24,7 @@ export async function GET() {
       email: user.email,
       role: user.role,
       status: user.status,
+      isEmailVerified: Boolean(user.isEmailVerified),
       avatarUrl: user.avatarUrl,
       profile: user.profile,
       recruiterProfile: user.recruiterProfile,

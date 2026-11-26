@@ -68,7 +68,7 @@ export async function POST(request) {
             email,
             passwordHash,
             role: "student",
-            status: "active",
+            status: "pending_verification",
             profile: {
                 college,
                 degree,
@@ -81,12 +81,14 @@ export async function POST(request) {
         const response = NextResponse.json(
             {
                 success: true,
-                message: "Student account created successfully.",
+                message: "Student account created. Please verify your email to activate your account.",
                 user: {
                     id: user._id,
                     name: user.name,
                     email: user.email,
                     role: user.role,
+                    status: user.status,
+                    isEmailVerified: user.isEmailVerified,
                     profile: user.profile,
                 },
             },

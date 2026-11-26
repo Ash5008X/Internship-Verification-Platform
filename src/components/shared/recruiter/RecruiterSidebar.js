@@ -203,6 +203,12 @@ const jobTitle =
               <p className="font-ui font-bold text-xs text-text truncate">
                 {recruiterName}
               </p>
+              <div className={`mt-0.5 flex items-center gap-1 text-[11px] ${recruiter?.isEmailVerified ? "text-success" : "text-warning"}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${recruiter?.isEmailVerified ? "bg-success" : "bg-warning"}`} />
+                <span className="font-ui font-medium">
+                  {recruiter?.isEmailVerified ? "Verified Recruiter" : "Pending Verification"}
+                </span>
+              </div>
             </div>
           </div>
 

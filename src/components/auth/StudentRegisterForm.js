@@ -147,7 +147,7 @@ export default function RegisterForm({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                },
+                },          
                 body: JSON.stringify({
                     name: data.name,
                     email: data.email,
@@ -155,6 +155,8 @@ export default function RegisterForm({
                     degree: data.degree,
                     graduationYear: data.graduationYear,
                     password: data.password,
+                    confirmPassword: data.confirmPassword,
+                    terms: data.terms,
                 }),
             });
 
